@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.venv/
+venv/
+
+# Renders (the small mp3 previews in samples/ are tracked; raw wavs are not)
+*.wav
+
+# OS cruft
+Thumbs.db
+.DS_Store
