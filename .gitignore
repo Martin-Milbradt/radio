@@ -8,6 +8,12 @@ venv/
 # Renders (the small mp3 previews in samples/ are tracked; raw wavs are not)
 *.wav
 
+# Assembled web preview / Pages build
+_site/
+
 # OS cruft
 Thumbs.db
 .DS_Store
+
+# Local lint config (symlink to a machine-specific path)
+.markdownlint.json

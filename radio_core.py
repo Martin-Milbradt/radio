@@ -12,8 +12,6 @@ Requires ffmpeg 7+ (ffplay with -ch_layout) in PATH for live playback.
 
 from __future__ import annotations
 
-import shutil
-import subprocess
 import wave
 
 import numpy as np
@@ -393,6 +391,9 @@ class WavSink:
 
 class FfplaySink:
     def __init__(self) -> None:
+        import shutil  # lazy: keeps radio_core importable under Pyodide, which lacks subprocess
+        import subprocess
+
         exe = shutil.which("ffplay")
         if exe is None:
             raise RuntimeError("ffplay not found in PATH (it ships with ffmpeg)")
@@ -428,16 +429,25 @@ class BarStreamer:
     tail, and tracks how many seconds have been emitted.
     """
 
-    def __init__(self, sink: WavSink | FfplaySink, tail: float = TAIL, drive: float = 1.1) -> None:
+    def __init__(
+        self, sink: WavSink | FfplaySink | None = None, tail: float = TAIL, drive: float = 1.1
+    ) -> None:
         self.sink = sink
         self.carry = np.zeros((int(tail * SR), 2))
         self.drive = drive
         self.played = 0.0
 
-    def push(self, buf: np.ndarray) -> None:
+    def process(self, buf: np.ndarray) -> np.ndarray:
+        """Overlap the previous tail, master the bar, keep the new tail; return the bar."""
         buf[: len(self.carry)] += self.carry
         barlen = len(buf) - len(self.carry)
         out = np.tanh(buf[:barlen] * self.drive) * 0.95
         self.carry = buf[barlen:].copy()
-        self.sink.write((out * 32767).astype(np.int16).tobytes())
         self.played += barlen / SR
+        return out
+
+    def push(self, buf: np.ndarray) -> np.ndarray:
+        out = self.process(buf)
+        if self.sink is not None:
+            self.sink.write((out * 32767).astype(np.int16).tobytes())
+        return out

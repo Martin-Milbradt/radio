@@ -11,6 +11,7 @@ songs.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -466,8 +467,9 @@ def announce(song: Song) -> None:
           f" | E({song.eu_k},16)")
 
 
-def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
-    bs = BarStreamer(sink)
+def bars(seconds: float | None) -> Iterator[np.ndarray]:
+    """Yield each mastered stereo bar; single source of the play loop (CLI and web)."""
+    bs = BarStreamer()
     first = True
     while True:
         song = make_song(first)
@@ -480,7 +482,12 @@ def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
                 print("   key change up")
             print(f"   [{sect.kind}]")
             for bi in range(sect.bars):
-                bs.push(render_bar(song, sect, bi, gbar))
+                yield bs.process(render_bar(song, sect, bi, gbar))
                 gbar += 1
                 if seconds is not None and bs.played >= seconds:
                     return
+
+
+def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+    for out in bars(seconds):
+        sink.write((out * 32767).astype(np.int16).tobytes())

@@ -18,10 +18,10 @@ import importlib
 from radio_core import FfplaySink, WavSink
 
 CHANNELS = {
-    "banger": "endless dance-music playlist (EDM, house, breaks, trance, downtempo)",
-    "banger-old": "superseded v1 of banger",
-    "fable": "one infinite, continuously evolving melodic track",
-    "fable-old": "superseded v1 of fable",
+    "banger": "experimental banger: adds polymetric arps, kalimba/bell, canon, shaker bed",
+    "banger-old": "endless dance-music playlist (EDM, house, breaks, trance, downtempo)",
+    "fable": "experimental fable: adds canon twin, kalimba/bell voices, square blips",
+    "fable-old": "one infinite, continuously evolving melodic track",
     "garden": "process music: coprime loops, Reich phasing, modal drift",
 }
 

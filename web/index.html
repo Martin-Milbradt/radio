@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>radio - endless generative music</title>
+    <meta
+      name="description"
+      content="Endless generative radio: numpy DSP synthesizing music one bar at a time, running in your browser via Pyodide."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
+  </head>
+  <body class="h-full bg-neutral-950 text-neutral-200 antialiased">
+    <main class="mx-auto flex min-h-full max-w-2xl flex-col gap-8 px-6 py-12">
+      <header class="space-y-2">
+        <h1 class="text-3xl font-semibold tracking-tight text-neutral-50">radio</h1>
+        <p class="text-sm text-neutral-400">
+          Endless generative music, synthesized one bar at a time with pure numpy
+          and running entirely in your browser. Nothing loops: an unseeded RNG
+          drives every choice, so what you hear has never played before and never
+          will again.
+        </p>
+      </header>
+
+      <section id="channels" class="grid gap-3 sm:grid-cols-3">
+        <!-- channel buttons injected by radio.js -->
+      </section>
+
+      <section class="flex items-center gap-3">
+        <button
+          id="pause"
+          class="rounded-md bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled
+        >
+          Pause
+        </button>
+        <button
+          id="stop"
+          class="rounded-md bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled
+        >
+          Stop
+        </button>
+        <p id="status" class="text-sm text-neutral-400">starting up...</p>
+      </section>
+
+      <footer class="text-xs text-neutral-600">
+        First load fetches the Python runtime and numpy (~10-15 MB), then caches
+        them. Pause holds the current track; Stop resets it, so the next start is a
+        fresh, never-before-heard take. Switching channels crossfades; Stop then a
+        channel is a hard cut.
+      </footer>
+    </main>
+
+    <script src="./radio.js"></script>
+  </body>
+</html>

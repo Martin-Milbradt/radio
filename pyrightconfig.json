@@ -1,0 +1,3 @@
+{
+  "exclude": ["_site", "**/__pycache__"]
+}

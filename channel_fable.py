@@ -11,6 +11,7 @@ changes exactly one thing per 8-bar phrase.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -96,9 +97,15 @@ def make_motif() -> list[tuple[int, int, float]]:
 
 
 def make_track() -> Track:
+    # start every track from the seed: a random progression, key and energy, so
+    # no two sessions open the same way
+    intensity = int(pick((1, 2, 2, 3)))
     return Track(
         bpm=float(RNG.uniform(136, 144)),
-        prog=list(PROGS[0]),
+        prog=list(pick(PROGS)),
+        intensity=intensity,
+        next_intensity=int(np.clip(intensity + pick((0, 1)), 1, 4)),
+        transpose=int(RNG.integers(-3, 4)),
         motif=make_motif(),
         bars_to_transpose=int(RNG.integers(64, 160)),
         mel_instr=pick(("sine", "kalimba", "kalimba", "bell")),
@@ -246,16 +253,22 @@ def render_bar(tr: Track, gbar: int) -> np.ndarray:
 # ---------------------------------------------------------------- streaming
 
 
-def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+def bars(seconds: float | None) -> Iterator[np.ndarray]:
+    """Yield each mastered stereo bar; single source of the play loop (CLI and web)."""
     tr = make_track()
     print(f">> endless fable | {tr.bpm:.0f} BPM | {'-'.join(tr.prog)}"
           f" | melody:{tr.mel_instr}{' + canon' if tr.canon else ''}")
-    bs = BarStreamer(sink)
+    bs = BarStreamer()
     gbar = 0
     while True:
         if gbar % PHRASE == 0 and gbar > 0:
             evolve(tr, gbar)
-        bs.push(render_bar(tr, gbar))
+        yield bs.process(render_bar(tr, gbar))
         gbar += 1
         if seconds is not None and bs.played >= seconds:
             return
+
+
+def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+    for out in bars(seconds):
+        sink.write((out * 32767).astype(np.int16).tobytes())

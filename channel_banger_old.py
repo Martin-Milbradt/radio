@@ -1,11 +1,17 @@
-"""Banger channel, superseded v1 (kept as an archive).
+"""Banger channel: endless generative dance-music playlist.
 
-The original style-preset playlist: no polymetric arps, no canon twin, no
-euclidean shaker layer, no micro-variations. See channel_banger for the
-current version.
+Style presets (peak EDM, house/disco, breakbeat, trance, downtempo) pick tempo,
+groove, swing, scale, bass pattern, chord instrument, build type and song
+structure per track, with 8-bar micro-variations that toggle a tasteful groove
+element and DJ-style transition sections leading from one song into the next.
+The busy extras (polymetric arps, kalimba/bell voices, a canon twin, a euclidean
+shaker bed) live in the experimental version, channel_banger, from which this
+module borrows its shared style, section and layer definitions.
 """
 
 from __future__ import annotations
+
+from collections.abc import Iterator
 
 import numpy as np
 
@@ -52,6 +58,7 @@ from radio_core import (
 )
 
 LEAD_VOICES = {"chip": chip, "keys": keys, "saw": lead_saw}
+VARIATIONS = ("none", "none", "shimmer", "drive")
 
 
 def make_song(first: bool) -> Song:
@@ -90,6 +97,17 @@ def make_song(first: bool) -> Song:
         eu_k=5,
         motif=make_motif(),
     )
+
+
+def update_variation(song: Song, gbar: int) -> None:
+    """Every 8 bars, maybe toggle one tasteful groove element."""
+    if gbar // 8 == song.var_key:
+        return
+    song.var_key = gbar // 8
+    old = song.var
+    song.var = pick(VARIATIONS)
+    if song.var != old:
+        print(f"   ~ {song.var}")
 
 
 def drums_into(buf: np.ndarray, song: Song, sect: Sect, beat: float, gbar: int) -> None:
@@ -133,19 +151,18 @@ def drums_into(buf: np.ndarray, song: Song, sect: Sect, beat: float, gbar: int) 
             place(buf, hat(), t16(s * 2, beat, sw), 0.16 * g, pan=0.2)
         for s in range(16):
             place(buf, shaker(), t16(s, beat, sw), 0.5 * g, pan=-0.35 if s % 2 else 0.1)
+    # 8-bar micro-variation: a tasteful groove toggle
+    if g > 0.85 and song.var == "shimmer":
+        for s in range(16):
+            if s % 2:
+                place(buf, hat(), t16(s, beat, sw), 0.07, pan=0.35)
+    if g > 0.85 and song.var == "drive":
+        place(buf, hat(open_hat=True), 1.5 * beat, 0.2, pan=-0.3)
+        place(buf, hat(open_hat=True), 3.5 * beat, 0.2, pan=0.3)
+    # fill into every 8-bar phrase boundary
     if gbar % 8 == 7 and g > 0.5:
         for s in range(8):
             place(buf, song.snare_snd, 2 * beat + t16(s, beat, sw) / 2, (0.18 + 0.04 * s) * g)
-
-
-def arp_into(song: Song, layer: np.ndarray, chord: list[int], beat: float,
-             gbar: int, gain: float) -> None:
-    if gbar // 8 != song.arp_key:
-        song.arp_key = gbar // 8
-        song.arp = [(int(RNG.integers(0, 4)), int(RNG.integers(0, 2)) * 12) for _ in range(16)]
-    for s, (idx, octave) in enumerate(song.arp):
-        f = midi_freq(chord[idx] + 12 + octave)
-        place(layer, chip(f, 0.14), t16(s, beat, song.swing), gain, pan=0.5 if s % 2 else -0.5)
 
 
 def melody_into(song: Song, layer: np.ndarray, beat: float, gbar: int, gain: float) -> None:
@@ -168,6 +185,7 @@ def render_bar(song: Song, sect: Sect, bi: int, gbar: int) -> np.ndarray:
     buf = np.zeros((barlen + int(TAIL * SR), 2))
     ducked = np.zeros_like(buf)
     chord = chord_notes(song, gbar)
+    update_variation(song, gbar)
 
     drums_into(buf, song, sect, beat, gbar)
     if sect.bass:
@@ -176,8 +194,6 @@ def render_bar(song: Song, sect: Sect, bi: int, gbar: int) -> np.ndarray:
         chords_into(song, ducked, chord, beat)
     if sect.pad:
         pad_into(ducked, chord, beat, 0.16)
-    if sect.arp:
-        arp_into(song, ducked, chord, beat, gbar, 0.11)
     if sect.lead:
         melody_into(song, ducked, beat, gbar, 0.24)
     if sect.kind in ("build", "lift"):
@@ -198,8 +214,9 @@ def render_bar(song: Song, sect: Sect, bi: int, gbar: int) -> np.ndarray:
     return buf
 
 
-def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
-    bs = BarStreamer(sink)
+def bars(seconds: float | None) -> Iterator[np.ndarray]:
+    """Yield each mastered stereo bar; single source of the play loop (CLI and web)."""
+    bs = BarStreamer()
     first = True
     while True:
         song = make_song(first)
@@ -214,7 +231,12 @@ def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
                 print("   key change up")
             print(f"   [{sect.kind}]")
             for bi in range(sect.bars):
-                bs.push(render_bar(song, sect, bi, gbar))
+                yield bs.process(render_bar(song, sect, bi, gbar))
                 gbar += 1
                 if seconds is not None and bs.played >= seconds:
                     return
+
+
+def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+    for out in bars(seconds):
+        sink.write((out * 32767).astype(np.int16).tobytes())

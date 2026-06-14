@@ -12,6 +12,7 @@ interference pattern.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -245,17 +246,23 @@ def render_bar(g: Garden, gbar: int) -> np.ndarray:
 # ---------------------------------------------------------------- streaming
 
 
-def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+def bars(seconds: float | None) -> Iterator[np.ndarray]:
+    """Yield each mastered stereo bar; single source of the play loop (CLI and web)."""
     g = make_garden()
     lengths = "/".join(str(c.length) for c in g.cells)
     print(f">> phase garden | {NOTE_NAMES[g.tonic % 12]} {MODES[g.mode_i][0]}"
           f" | {g.bpm:.0f} BPM | loops {lengths} | twin on {g.cells[0].length}")
-    bs = BarStreamer(sink, tail=GTAIL, drive=1.8)
+    bs = BarStreamer(tail=GTAIL, drive=1.8)
     gbar = 0
     while True:
         if gbar % 8 == 0 and gbar > 0:
             evolve(g, gbar)
-        bs.push(render_bar(g, gbar))
+        yield bs.process(render_bar(g, gbar))
         gbar += 1
         if seconds is not None and bs.played >= seconds:
             return
+
+
+def stream(sink: WavSink | FfplaySink, seconds: float | None) -> None:
+    for out in bars(seconds):
+        sink.write((out * 32767).astype(np.int16).tobytes())
