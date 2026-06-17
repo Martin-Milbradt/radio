@@ -49,11 +49,11 @@ ffmpeg -y -i g.wav -c:a libmp3lame -q:a 0 samples/garden.mp3
   generator (the single source of the play loop; yields mastered bars from
   `BarStreamer.process`) and a thin `stream(sink, seconds)` that encodes those
   bars to the sink. Channels own all musical decisions; the core owns how things
-  sound. Naming is inverted by history: the `*_old` modules are the MAIN, clean
-  `fable` and `banger` (the web shows them under those names); `channel_fable` and
-  `channel_banger` are the feature-rich "experimental" variants (canon, extra
-  voices, arps, blips). The mains import shared chord/section/layer definitions
-  from the experimental modules, so don't break those exports.
+  sound. `channel_fable` and `channel_banger` are the MAIN, clean channels;
+  `channel_fable_experimental` and `channel_banger_experimental` are the
+  feature-rich variants (canon, extra voices, arps, blips). The mains import
+  shared chord/section/layer definitions from the experimental modules, so don't
+  break those exports.
 - `web/` + `.github/workflows/pages.yml` - the browser front-end runs the engine
   via Pyodide and pulls `bars()` through Web Audio. The pull model is required:
   GitHub Pages can't send COOP/COEP, so no `SharedArrayBuffer` and no way to

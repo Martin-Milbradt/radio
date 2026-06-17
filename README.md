@@ -25,16 +25,16 @@ python radio.py fable --wav out.wav --seconds 120
 
 ## Channels
 
-The three main channels (the browser labels are in parentheses):
+The three main channels:
 
-- `fable-old` ("fable") - one infinite, continuously evolving melodic track
+- `fable` - one infinite, continuously evolving melodic track
 - `garden` - process music: coprime loops, Reich phasing, modal drift
-- `banger-old` ("banger") - endless dance-music playlist (EDM, house, breaks,
-  trance, downtempo)
+- `banger` - endless dance-music playlist (EDM, house, breaks, trance,
+  downtempo)
 
-The CLI names `fable` and `banger` (browser: "fable experimental" / "banger
-experimental") are busier variants of the same engines, adding a canon twin,
-kalimba/bell voices, polymetric arps, square blips and a euclidean shaker bed.
+The `fable-experimental` and `banger-experimental` channels are busier variants
+of the same engines, adding a canon twin, kalimba/bell voices, polymetric arps,
+square blips and a euclidean shaker bed.
 
 ## Run in the browser
 
@@ -71,9 +71,10 @@ policy).
   music logic; the core owns how things sound and how they reach the speakers.
 - `channel_*.py` - one module per channel. Each exposes a `bars(seconds)`
   generator (the single source of the play loop, yielding mastered bars) and a
-  `stream(sink, seconds)` that writes those bars to a sink. The `*_old` modules
-  are the main `fable`/`banger`; `channel_fable`/`channel_banger` are the busier
-  "experimental" variants the mains borrow shared definitions from.
+  `stream(sink, seconds)` that writes those bars to a sink. `channel_fable` and
+  `channel_banger` are the main channels; `channel_fable_experimental` and
+  `channel_banger_experimental` are the busier variants the mains borrow shared
+  definitions from.
 - `web/` - the browser front-end (`index.html` + `radio.js`) that runs the
   engine via Pyodide and plays it through Web Audio.
 - `.github/workflows/pages.yml` - assembles and deploys the web build to Pages.

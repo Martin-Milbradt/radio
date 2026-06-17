@@ -27,11 +27,11 @@ const RATE_LO = 0.94; // tempo-nudge clamp (limits pitch shift during a family b
 const RATE_HI = 1.06;
 
 const CHANNELS = [
-  { id: "fable-old", title: "fable", blurb: "one infinite, evolving melodic track" },
+  { id: "fable", title: "fable", blurb: "one infinite, evolving melodic track" },
   { id: "garden", title: "garden", blurb: "process music: coprime loops, modal drift" },
-  { id: "banger-old", title: "banger", blurb: "endless dance-music playlist" },
-  { id: "fable", title: "fable experimental", blurb: "fable + canon, extra voices, blips" },
-  { id: "banger", title: "banger experimental", blurb: "banger + arps, shaker, canon" },
+  { id: "banger", title: "banger", blurb: "endless dance-music playlist" },
+  { id: "fable-experimental", title: "fable experimental", blurb: "fable + canon, extra voices, blips" },
+  { id: "banger-experimental", title: "banger experimental", blurb: "banger + arps, shaker, canon" },
 ];
 
 const BUILD = Date.now(); // cache-buster so a stale channel source is never served
@@ -54,7 +54,7 @@ let nextVoiceId = 1;
 let activeId = null;
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
-const familyOf = (id) => id.replace(/-old$/, "");
+const familyOf = (id) => id.replace(/-experimental$/, "");
 
 function freshSeed() {
   // 128 bits of browser entropy so every voice seeds independently, regardless

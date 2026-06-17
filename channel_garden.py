@@ -81,18 +81,30 @@ class Garden:
     perc_rot: int = 0
 
 
-def make_cell(name: str, length: int, timbre: str, base_oct: int, gain: float,
-              pan: float) -> Cell:
+def make_cell(
+    name: str, length: int, timbre: str, base_oct: int, gain: float, pan: float
+) -> Cell:
     n_notes = int(RNG.integers(3, max(4, length // 2 + 1)))
     slots = sorted(RNG.choice(length, size=n_notes, replace=False).tolist())
     deg = int(RNG.integers(3, 7))
     notes = []
     for s in slots:
         deg = int(np.clip(deg + RNG.integers(-2, 3), 0, 9))
-        ln = float(pick((2.0, 3.0, 4.0)) if timbre == "flute" else pick((1.0, 1.0, 2.0)))
+        ln = float(
+            pick((2.0, 3.0, 4.0)) if timbre == "flute" else pick((1.0, 1.0, 2.0))
+        )
         notes.append((int(s), deg, ln))
-    return Cell(name, length, notes, timbre, base_oct, gain, pan,
-                breath=float(RNG.uniform(21, 55)), breath_ph=float(RNG.uniform(0, 6.28)))
+    return Cell(
+        name,
+        length,
+        notes,
+        timbre,
+        base_oct,
+        gain,
+        pan,
+        breath=float(RNG.uniform(21, 55)),
+        breath_ph=float(RNG.uniform(0, 6.28)),
+    )
 
 
 def make_garden() -> Garden:
@@ -171,8 +183,16 @@ def evolve(g: Garden, gbar: int) -> None:
 # ---------------------------------------------------------------- bar render
 
 
-def cell_into(buf: np.ndarray, g: Garden, cell: Cell, gbar: int, pulse: float,
-              offset_pulses: int = 0, frac: float = 0.0, mirror: bool = False) -> None:
+def cell_into(
+    buf: np.ndarray,
+    g: Garden,
+    cell: Cell,
+    gbar: int,
+    pulse: float,
+    offset_pulses: int = 0,
+    frac: float = 0.0,
+    mirror: bool = False,
+) -> None:
     act = activity(cell, gbar)
     was = cell.awake
     cell.awake = act > 0
@@ -189,8 +209,13 @@ def cell_into(buf: np.ndarray, g: Garden, cell: Cell, gbar: int, pulse: float,
             if s != k:
                 continue
             f = degree_freq(g, deg, cell.base_oct)
-            place(buf, fn(f, ln * pulse), (p + frac) * pulse,
-                  cell.gain * (0.45 + 0.55 * act), pan)
+            place(
+                buf,
+                fn(f, ln * pulse),
+                (p + frac) * pulse,
+                cell.gain * (0.45 + 0.55 * act),
+                pan,
+            )
 
 
 def render_bar(g: Garden, gbar: int) -> np.ndarray:
@@ -212,8 +237,16 @@ def render_bar(g: Garden, gbar: int) -> np.ndarray:
     for ci, cell in enumerate(g.cells):
         cell_into(buf, g, cell, gbar, pulse)
         if ci == 0:
-            cell_into(buf, g, cell, gbar, pulse, offset_pulses=g.twin_offset,
-                      frac=g.twin_frac, mirror=True)
+            cell_into(
+                buf,
+                g,
+                cell,
+                gbar,
+                pulse,
+                offset_pulses=g.twin_offset,
+                frac=g.twin_frac,
+                mirror=True,
+            )
 
     # twin drift: hold the current offset, then slide one pulse ahead
     if g.twin_locked_bars > 0:
@@ -238,7 +271,13 @@ def render_bar(g: Garden, gbar: int) -> np.ndarray:
         deg = int(pick((0, 2, 4, 7, 9)))
         f = midi_freq(g.tonic + 36 + scale[deg % 7] + 12 * (deg // 7))
         snd = echo(droplet(f, 1.2), 0.21, 0.45, 3)
-        place(buf, snd, float(RNG.uniform(0, 3)) * beat, 0.05, pan=float(RNG.uniform(-0.5, 0.5)))
+        place(
+            buf,
+            snd,
+            float(RNG.uniform(0, 3)) * beat,
+            0.05,
+            pan=float(RNG.uniform(-0.5, 0.5)),
+        )
 
     return buf
 
@@ -250,8 +289,10 @@ def bars(seconds: float | None) -> Iterator[np.ndarray]:
     """Yield each mastered stereo bar; single source of the play loop (CLI and web)."""
     g = make_garden()
     lengths = "/".join(str(c.length) for c in g.cells)
-    print(f">> phase garden | {NOTE_NAMES[g.tonic % 12]} {MODES[g.mode_i][0]}"
-          f" | {g.bpm:.0f} BPM | loops {lengths} | twin on {g.cells[0].length}")
+    print(
+        f">> phase garden | {NOTE_NAMES[g.tonic % 12]} {MODES[g.mode_i][0]}"
+        f" | {g.bpm:.0f} BPM | loops {lengths} | twin on {g.cells[0].length}"
+    )
     bs = BarStreamer(tail=GTAIL, drive=1.8)
     gbar = 0
     while True:

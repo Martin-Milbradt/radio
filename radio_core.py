@@ -99,7 +99,9 @@ def saw(freq: float, n: int) -> np.ndarray:
     return polyblep(ph, dt)
 
 
-def place(buf: np.ndarray, snd: np.ndarray, t: float, gain: float, pan: float = 0.0) -> None:
+def place(
+    buf: np.ndarray, snd: np.ndarray, t: float, gain: float, pan: float = 0.0
+) -> None:
     start = int(t * SR)
     if start >= len(buf) or start < 0:
         return
@@ -122,7 +124,9 @@ def duck_curve(n: int, beat: float, depth: float) -> np.ndarray:
     return 1 - depth * dip * (1 - recovery)
 
 
-def echo(snd: np.ndarray, delay: float = 0.18, decay: float = 0.45, taps: int = 3) -> np.ndarray:
+def echo(
+    snd: np.ndarray, delay: float = 0.18, decay: float = 0.45, taps: int = 3
+) -> np.ndarray:
     pad = int(delay * SR * taps)
     out = np.concatenate([snd, np.zeros(pad)])
     for i in range(1, taps + 1):
@@ -177,7 +181,9 @@ def clap() -> np.ndarray:
     for off in (0.0, 0.012, 0.026):
         i = int(off * SR)
         tt = np.arange(n - i) / SR
-        out[i:] += bp_noise(n - i, 4, 14) * np.exp(-tt * 60) * np.clip(tt / 0.0015, 0, 1)
+        out[i:] += (
+            bp_noise(n - i, 4, 14) * np.exp(-tt * 60) * np.clip(tt / 0.0015, 0, 1)
+        )
     out += bp_noise(n, 4, 14) * np.exp(-np.arange(n) / SR * 14) * 0.4
     return declick(out * 0.26)
 
@@ -219,7 +225,9 @@ def saw_note(freq: float, dur: float, crush: bool = False) -> np.ndarray:
     return declick(out)
 
 
-def supersaw(freq: float, dur: float, voices: int, detune: float, cutoff: float) -> np.ndarray:
+def supersaw(
+    freq: float, dur: float, voices: int, detune: float, cutoff: float
+) -> np.ndarray:
     n = int(dur * SR)
     out = np.zeros(n)
     spread = np.linspace(-1, 1, voices) if voices > 1 else np.zeros(1)
@@ -244,8 +252,11 @@ def pluck(freq: float, dur: float) -> np.ndarray:
 def keys(freq: float, dur: float) -> np.ndarray:
     """Soft EP-ish tone: sine plus gentle harmonics, slow decay."""
     t = trange(dur)
-    out = (np.sin(2 * np.pi * freq * t) + 0.4 * np.sin(2 * np.pi * 2 * freq * t)
-           + 0.12 * np.sin(2 * np.pi * 3 * freq * t))
+    out = (
+        np.sin(2 * np.pi * freq * t)
+        + 0.4 * np.sin(2 * np.pi * 2 * freq * t)
+        + 0.12 * np.sin(2 * np.pi * 3 * freq * t)
+    )
     env = np.clip(t * 250, 0, 1) * np.exp(-t * 3.0)
     return declick(out / 1.5 * env)
 
@@ -292,7 +303,9 @@ def melody_note(freq: float, dur: float) -> np.ndarray:
     """The fable melody voice: vibrato sine with octave shimmer."""
     t = trange(dur)
     vib = 0.3 * np.sin(2 * np.pi * 4.7 * t) * np.clip(t * 2, 0, 1)
-    out = np.sin(2 * np.pi * freq * t + vib) + 0.18 * np.sin(2 * np.pi * 2 * freq * t + vib)
+    out = np.sin(2 * np.pi * freq * t + vib) + 0.18 * np.sin(
+        2 * np.pi * 2 * freq * t + vib
+    )
     env = np.clip(t / 0.012, 0, 1) * np.exp(-t * 2.2)
     return declick(out / 1.2 * env)
 
@@ -309,7 +322,12 @@ def kalimba(freq: float, dur: float) -> np.ndarray:
 def bell(freq: float, dur: float) -> np.ndarray:
     t = trange(max(dur, 2.4))
     out = np.zeros_like(t)
-    for ratio, amp, dec in ((1.0, 1.0, 1.9), (2.0, 0.45, 2.6), (2.756, 0.3, 3.4), (4.07, 0.12, 5.0)):
+    for ratio, amp, dec in (
+        (1.0, 1.0, 1.9),
+        (2.0, 0.45, 2.6),
+        (2.756, 0.3, 3.4),
+        (4.07, 0.12, 5.0),
+    ):
         out += amp * np.sin(2 * np.pi * freq * ratio * t) * np.exp(-t * dec)
     env = np.clip(t / 0.004, 0, 1)
     return declick(out / 1.5 * env)
@@ -397,8 +415,22 @@ class FfplaySink:
         exe = shutil.which("ffplay")
         if exe is None:
             raise RuntimeError("ffplay not found in PATH (it ships with ffmpeg)")
-        cmd = [exe, "-hide_banner", "-loglevel", "error", "-nodisp", "-autoexit",
-               "-f", "s16le", "-ar", str(SR), "-ch_layout", "stereo", "-i", "-"]
+        cmd = [
+            exe,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-nodisp",
+            "-autoexit",
+            "-f",
+            "s16le",
+            "-ar",
+            str(SR),
+            "-ch_layout",
+            "stereo",
+            "-i",
+            "-",
+        ]
         self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         try:
             self.proc.wait(timeout=0.6)
@@ -430,7 +462,10 @@ class BarStreamer:
     """
 
     def __init__(
-        self, sink: WavSink | FfplaySink | None = None, tail: float = TAIL, drive: float = 1.1
+        self,
+        sink: WavSink | FfplaySink | None = None,
+        tail: float = TAIL,
+        drive: float = 1.1,
     ) -> None:
         self.sink = sink
         self.carry = np.zeros((int(tail * SR), 2))
