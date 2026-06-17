@@ -457,17 +457,11 @@ class BarStreamer:
     """Carries the ring-over tail between bars, soft-clips, writes PCM.
 
     Channels render one bar at a time into a buffer of (bar + tail) samples;
-    push() overlaps the previous tail, masters the bar portion, keeps the new
+    process() overlaps the previous tail, masters the bar portion, keeps the new
     tail, and tracks how many seconds have been emitted.
     """
 
-    def __init__(
-        self,
-        sink: WavSink | FfplaySink | None = None,
-        tail: float = TAIL,
-        drive: float = 1.1,
-    ) -> None:
-        self.sink = sink
+    def __init__(self, tail: float = TAIL, drive: float = 1.1) -> None:
         self.carry = np.zeros((int(tail * SR), 2))
         self.drive = drive
         self.played = 0.0
@@ -479,10 +473,4 @@ class BarStreamer:
         out = np.tanh(buf[:barlen] * self.drive) * 0.95
         self.carry = buf[barlen:].copy()
         self.played += barlen / SR
-        return out
-
-    def push(self, buf: np.ndarray) -> np.ndarray:
-        out = self.process(buf)
-        if self.sink is not None:
-            self.sink.write((out * 32767).astype(np.int16).tobytes())
         return out

@@ -70,7 +70,7 @@ ffmpeg -y -i g.wav -c:a libmp3lame -q:a 0 samples/garden.mp3
   band-limited oscillators, `bp_noise` percussion, every percussive envelope
   through `declick`, pitched material diatonic to the current scale or chord,
   motif-based melodies rather than random walks.
-- Buffers pushed to `BarStreamer.push` must be `bar + tail` samples long, and
+- Buffers pushed to `BarStreamer.process` must be `bar + tail` samples long, and
   the tail must cover the channel's longest ring-over (garden uses a 6 s tail).
 - RNG is the shared `radio_core.RNG`, unseeded by design. Channel code must not
   seed it. The web glue is the one exception: it swaps `RNG.bit_generator.state`

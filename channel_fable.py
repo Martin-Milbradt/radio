@@ -54,7 +54,6 @@ def make_track() -> Track:
         next_intensity=int(np.clip(intensity + pick((0, 1)), 1, 4)),
         transpose=int(RNG.integers(-3, 4)),
         bars_to_transpose=int(RNG.integers(64, 160)),
-        breath_ph=float(RNG.uniform(0, 6.28)),
     )
 
 
@@ -84,11 +83,6 @@ def evolve(tr: Track, gbar: int) -> None:
     elif r2 < 0.12:
         tr.prog = list(PROGS[int(RNG.integers(0, len(PROGS)))])
         print(f"   chords -> {'-'.join(tr.prog)}")
-    elif r2 < 0.62:
-        old = tr.color
-        tr.color = float(np.clip(tr.color + RNG.uniform(-0.3, 0.35), 0, 1))
-        if (old < 0.3) != (tr.color < 0.3):
-            print(f"   color {'blooms' if tr.color >= 0.3 else 'fades'}")
 
     if tr.intensity != tr.next_intensity or gbar % (PHRASE * 4) == 0:
         print(

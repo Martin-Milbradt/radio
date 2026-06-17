@@ -85,7 +85,7 @@ policy).
 - All oscillators are band-limited (polyBLEP saws, tanh-softened squares);
   percussion noise comes from `bp_noise` (no near-Nyquist energy, no
   convolution edge artifacts). Every percussive envelope ends in `declick`.
-- Buffers handed to `BarStreamer.push` must be `bar + tail` samples long, with
+- Buffers handed to `BarStreamer.process` must be `bar + tail` samples long, with
   the tail long enough for the channel's longest ring-over (the garden uses a
   6 s tail for its 2-bar drones).
 - All pitched material in a bar must be diatonic to the channel's current
